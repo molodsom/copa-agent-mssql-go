@@ -16,6 +16,7 @@ var (
 	dbHost    = flag.String("host", "localhost", "the database server")
 	dbPort    = flag.Int("port", 1433, "the database port")
 	dbName    = flag.String("db", "", "the database name")
+	dbTbl     = flag.String("table", "dbo.tbluser_airbyte_test", "the table name")
 	dbUser    = flag.String("user", "", "the database user")
 	dbPass    = flag.String("password", "", "the database password")
 	copaUrl   = flag.String("url", "https://api.copastc.io", "http[s]://host[:port]")
@@ -62,29 +63,37 @@ func main() {
 		log.Fatalln("Authorization failed")
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+	}(resp.Body)
 
 	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln("Read data failed:", err.Error())
+	}
+
+	var users []User
+	err = json.Unmarshal(b, &users)
 	if err != nil {
 		log.Fatalln("Parse data failed:", err.Error())
 	}
 
-	var users []User
-	json.Unmarshal(b, &users)
-
-	importStr := mssql.CopyIn(
-		"dbo.tblUser",
-		mssql.BulkOptions{},
-		"PIN", "Name", "Surname", "id_tblAdminSettings", "Role", "PasswordHashed", "HasPicture",
-		"HasProfilePicture", "IsActiv", "LanguageID", "IsTrainer")
 	db := getDb()
-
 	txn, err := db.Begin()
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
-	stmt, _ := txn.Prepare(importStr)
+	importStr := mssql.CopyIn(
+		*dbTbl,
+		mssql.BulkOptions{},
+		"PIN", "Name", "Surname", "id_tblAdminSettings", "Role", "PasswordHashed", "HasPicture",
+		"HasProfilePicture", "IsActiv", "LanguageID", "IsTrainer")
+
+	stmt, err := txn.Prepare(importStr)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
