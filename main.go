@@ -58,6 +58,9 @@ func main() {
 	if err != nil {
 		log.Fatalln("API connection failed:", err.Error())
 	}
+	if resp.StatusCode == 401 || resp.StatusCode == 403 {
+		log.Fatalln("Authorization failed")
+	}
 
 	defer resp.Body.Close()
 
