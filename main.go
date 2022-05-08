@@ -99,7 +99,7 @@ func main() {
 	}
 
 	for _, user := range users {
-		_, err = stmt.Exec("4654", user.Name, user.Surname, 50, 20, 0, 0, 0, 1, 3, 0)
+		_, err = stmt.Exec("4654", user.Name, user.Surname, 50, 20, false, false, false, true, 3, false)
 		if err != nil {
 			log.Fatalln(err.Error())
 		}
