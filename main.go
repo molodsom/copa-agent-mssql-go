@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 var (
@@ -47,6 +48,10 @@ func requestData() *http.Request {
 
 func main() {
 	flag.Parse()
+	if len(os.Args) == 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(requestData())
